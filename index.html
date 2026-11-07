@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Disparo de imagem e texto pela API oficial do WhatsApp Business (Cloud API). Roda 100% no seu navegador.">
+  <title>Disparo WhatsApp · API Oficial</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <span class="logo">💬</span>
+    <div>
+      <h1>Disparo WhatsApp</h1>
+      <p>Imagem + texto pela <strong>API oficial</strong> (WhatsApp Business Cloud API) — roda 100% no seu navegador</p>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- 1. CONEXÃO -->
+  <section class="card">
+    <h2><span class="step">1</span> Conexão com a API</h2>
+    <div class="grid-2">
+      <label>Phone Number ID
+        <input id="phoneId" type="text" placeholder="ex.: 123456789012345" autocomplete="off">
+      </label>
+      <label>Versão da API
+        <input id="apiVersion" type="text" value="v23.0" autocomplete="off">
+      </label>
+    </div>
+    <label>Token de acesso <small>(Cloud API — começa com EAAG…; não é o token do GitHub)</small>
+      <input id="token" type="password" placeholder="EAAG..." autocomplete="off">
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" id="remember">
+      Lembrar token neste navegador <small>(fica salvo apenas no localStorage desta máquina)</small>
+    </label>
+    <div class="row">
+      <button id="testConn" class="btn ghost" type="button">🔌 Testar conexão</button>
+      <span id="connStatus" class="status-line" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <!-- 2. MENSAGEM -->
+  <section class="card">
+    <h2><span class="step">2</span> Mensagem</h2>
+
+    <label>Tipo de envio
+      <select id="msgType">
+        <option value="image">🖼️ Imagem com legenda</option>
+        <option value="text">📝 Somente texto</option>
+        <option value="template">📋 Template aprovado (imagem + texto variáveis)</option>
+      </select>
+    </label>
+
+    <div id="imageFields">
+      <label>Origem da imagem
+        <select id="imageSource">
+          <option value="url">🔗 URL pública</option>
+          <option value="upload">📤 Enviar arquivo do computador</option>
+        </select>
+      </label>
+      <label id="imageUrlLabel">URL da imagem <small>(precisa ser acessível publicamente — https)</small>
+        <input id="imageUrl" type="url" placeholder="https://seusite.com/promo.jpg">
+      </label>
+      <label id="imageFileLabel" hidden>Arquivo de imagem <small>(JPEG ou PNG, até 5 MB — enviado 1x à Meta e reaproveitado para todos)</small>
+        <input id="imageFile" type="file" accept="image/jpeg,image/png,image/webp">
+      </label>
+      <label id="captionLabel">Legenda da imagem <small>(até 1024 caracteres)</small>
+        <textarea id="caption" rows="4" maxlength="1024" placeholder="Olá! Confira nossa promoção 😊"></textarea>
+      </label>
+    </div>
+
+    <div id="textFields" hidden>
+      <label>Texto da mensagem
+        <textarea id="textBody" rows="4" placeholder="Sua mensagem aqui..."></textarea>
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" id="previewUrl" checked>
+        Pré-visualizar links
+      </label>
+    </div>
+
+    <div id="templateFields" hidden>
+      <div class="grid-2">
+        <label>Nome do template <small>(aprovado no WhatsApp Manager)</small>
+          <input id="tplName" type="text" placeholder="ex.: promocao_novembro">
+        </label>
+        <label>Idioma do template
+          <input id="tplLang" type="text" value="pt_BR" placeholder="pt_BR">
+        </label>
+      </div>
+      <label>Imagem do cabeçalho <small>(mesma origem escolhida acima)</small></label>
+      <label>Variáveis do corpo <small>(separe com | — cada vira um {{1}}, {{2}}…)</small>
+        <input id="tplVars" type="text" placeholder="Olá Maria|Sua oferta é 50% OFF|Válido até sexta">
+      </label>
+      <p class="hint">O template precisa estar <strong>aprovado</strong> no WhatsApp Manager com cabeçalho de imagem e as variáveis na ordem informada. É o único jeito de disparar para quem <strong>não conversou com você nas últimas 24h</strong>.</p>
+    </div>
+  </section>
+
+  <!-- 3. DESTINATÁRIOS -->
+  <section class="card">
+    <h2><span class="step">3</span> Destinatários</h2>
+    <label>Números <small>(um por linha, com DDI — ex.: 5511999998888)</small>
+      <textarea id="numbers" rows="6" class="mono" placeholder="5511999998888&#10;5521988887777&#10;553177776666"></textarea>
+    </label>
+    <div class="grid-2">
+      <label class="checkbox">
+        <input type="checkbox" id="fix55" checked>
+        Completar com <strong>55</strong> se faltar DDI
+      </label>
+      <label>Intervalo entre envios (segundos)
+        <input id="delay" type="number" min="1" max="60" value="4">
+      </label>
+    </div>
+  </section>
+
+  <!-- AÇÕES -->
+  <section class="actions card">
+    <button id="sendBtn" class="btn primary" type="button">🚀 Disparar</button>
+    <button id="stopBtn" class="btn danger" type="button" disabled>⏹ Parar</button>
+    <span id="summary" class="summary" aria-live="polite"></span>
+  </section>
+
+  <!-- LOG -->
+  <section class="card">
+    <div class="log-head">
+      <h2><span class="step">4</span> Registro de envios</h2>
+      <button id="csvBtn" class="btn ghost small" type="button" hidden>⬇️ Baixar CSV</button>
+    </div>
+    <div id="log" class="log">
+      <p class="hint">Nenhum envio ainda. Os resultados aparecem aqui em tempo real.</p>
+    </div>
+  </section>
+
+  <section class="notes">
+    <p><strong>ℹ️ Janela de 24 horas:</strong> mensagens livres (imagem/texto) só são entregues para números que mandaram mensagem para você nas últimas 24h. Para primeiro contato, use a opção <em>Template aprovado</em> — caso contrário a API retorna o erro <code>131047</code>.</p>
+    <p><strong>🔒 Privacidade:</strong> nada é enviado para servidores deste site — o navegador chama a API da Meta diretamente. Dados salvos ficam apenas no <code>localStorage</code> do seu navegador.</p>
+    <p><strong>⚠️ Políticas:</strong> envie apenas para números que autorizaram o contato (opt-in). Disparo em massa sem consentimento viola as políticas da Meta e pode banir seu número.</p>
+    <p><a href="#" id="clearData">Limpar dados salvos neste navegador</a></p>
+  </section>
+
+</main>
+
+<footer>
+  <p>Disparo WhatsApp · API oficial WhatsApp Business Cloud API · <a href="https://github.com/foodpets/disparowhats" target="_blank" rel="noopener">código-fonte</a></p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
