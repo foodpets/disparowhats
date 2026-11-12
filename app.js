@@ -157,6 +157,7 @@ function describeError(data) {
     extras.push("Número fora da janela de 24h → use a opção “Template aprovado” para primeiro contato.");
   }
   if (e.code === 190) extras.push("Token inválido ou expirado.");
+  if (e.code === 131030) extras.push("Modo de teste: o destinatário precisa estar na lista de números permitidos (Meta → seu app → WhatsApp → API Setup → campo 'Para' → gerenciar lista de até 5 números).");
   if (e.code === 130429 || e.code === 131048) extras.push("Limite de taxa atingido — aumente o intervalo entre envios.");
   return `${e.message || "erro"}${e.code ? ` (código ${e.code})` : ""}${extras.length ? " — " + extras.join(" ") : ""}`;
 }
